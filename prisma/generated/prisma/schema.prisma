@@ -1,0 +1,79 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model user {
+  userid              Int            @id @default(autoincrement())
+  user                String         @unique @db.Char(20)
+  email               String         @unique()
+  bb_access_token     String?
+  bb_refresh_token    String?
+  bb_token_expires_at DateTime?
+  eventoid            criar_evento[]
+}
+
+model extrato_Movimentaçao {
+  trasaçaoid         String           @id @default(uuid())
+  codigoAgenciaOrigem Int
+  data_lançamento    DateTime         @db.Timestamp(2)
+  descriçao          String
+  tipo_lançamento    tipo_lançamento @default(DEBITO) @map("lançamento")
+  valor               Decimal          @db.Decimal(6, 2)
+  data_Extrato        DateTime         @default(now())
+  numero_Conta_origem Int
+  codigo_Banco        Int
+}
+
+model criar_evento {
+  eventoid     Int              @id
+  titulo       String           @db.Char(255)
+  image        String?
+  descriçao   String           @db.Char(255)
+  criar_evento DateTime         @default(now())
+  data_termino DateTime         @db.Date()
+  ultima_mod   DateTime         @updatedAt
+  criadorid    Int
+  criador      user             @relation(fields: [criadorid], references: [userid])
+  registro     registo_evento[]
+}
+
+model endereço {
+  endereçoid String           @id @default(uuid())
+  lote        String           @db.Char(30)
+  numero      Int
+  quadra      String           @db.Char(20)
+  bairro      String           @db.Char(15)
+  referencia  String           @db.Char(50)
+  registroid  registo_evento[]
+}
+
+model registo_evento {
+  registro_id       Int          @id @default(autoincrement())
+  nome              String       @unique
+  sobrenome         String       @unique
+  responsavel       String       @unique
+  idade             Int          @unique
+  idade_responsavel DateTime     @db.Date
+  created_registro  DateTime     @default(now())
+  endereçoid       String
+  endereço         endereço    @relation(fields: [endereçoid], references: [endereçoid])
+  eventoid          Int
+  evento            criar_evento @relation(fields: [eventoid], references: [eventoid])
+}
+
+enum tipo_lançamento {
+  DEBITO
+  CREDITO
+}

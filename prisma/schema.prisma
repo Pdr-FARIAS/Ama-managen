@@ -10,15 +10,18 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
 model user {
-  userid   Int            @id @default(autoincrement())
-  user     String         @unique @db.Char(20)
-  email    String         @unique()
-  eventoid criar_evento[]
+  userid              Int            @id @default(autoincrement())
+  user                String         @unique @db.Char(20)
+  email               String         @unique()
+  bb_access_token     String?
+  bb_refresh_token    String?
+  bb_token_expires_at DateTime?
+  eventoid            criar_evento[]
 }
 
 model extrato_Movimentaçao {
@@ -49,7 +52,7 @@ model criar_evento {
 model endereço {
   endereçoid String           @id @default(uuid())
   lote        String           @db.Char(30)
-  numero      Int              @db.Integer
+  numero      Int
   quadra      String           @db.Char(20)
   bairro      String           @db.Char(15)
   referencia  String           @db.Char(50)
