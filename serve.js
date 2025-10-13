@@ -1,11 +1,8 @@
 import express from 'express';
 import cors from 'cors';
+import dotenv from "dotenv";
+dotenv.config();
 
-import UserRouter from './src/router/UserRouter.js';
-import EventoRouter from './src/router/EventoRouter.js';
-import EnderecoRouter from './src/router/EnderecoRouter.js';
-import RegistroRouter from './src/router/RegistroRouter.js';
-import ExtratoRouter from './src/router/ExtratoRouter.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,13 +10,12 @@ const PORT = process.env.PORT || 3000;
 // Middlewares
 app.use(cors());
 app.use(express.json());
+console.log("JWT_SECRET:", process.env.JWT_SECRET);
+console.log("PORT:", process.env.PORT)
+console.log("url bb", process.env.URLBB);
 
 // Rotas principais
-app.use('/users', UserRouter);
-app.use('/eventos', EventoRouter);
-app.use('/enderecos', EnderecoRouter);
-app.use('/registros', RegistroRouter);
-app.use('/extratos', ExtratoRouter);
+
 
 // Rota inicial
 app.get('/', (req, res) => {

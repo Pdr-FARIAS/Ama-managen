@@ -14,33 +14,45 @@ datasource db {
 }
 
 model user {
-  userid              Int            @id @default(autoincrement())
-  user                String         @unique @db.Char(20)
-  email               String         @unique()
-  bb_access_token     String?
-  bb_refresh_token    String?
-  bb_token_expires_at DateTime?
-  eventoid            criar_evento[]
+  userid        Int                     @id @default(autoincrement())
+  user          String                  @unique @db.Char(20)
+  email         String                  @unique()
+  password      String
+  numero_conta  String                  @unique @db.Char(9)
+  agencia_conta String                  @unique @db.Char(4)
+  movimentacoes extrato_Movimentaçao[]
+  eventoid      criar_evento[]
 }
 
 model extrato_Movimentaçao {
-  trasaçaoid         String           @id @default(uuid())
-  codigoAgenciaOrigem Int
-  data_lançamento    DateTime         @db.Timestamp(2)
-  descriçao          String
-  tipo_lançamento    tipo_lançamento @default(DEBITO) @map("lançamento")
-  valor               Decimal          @db.Decimal(6, 2)
-  data_Extrato        DateTime         @default(now())
-  numero_Conta_origem Int
-  codigo_Banco        Int
+  extratoid                  String   @id @default(uuid())
+  userid                     Int // ID do usuário (relacionamento)
+  codigoAgenciaOrigem        Int
+  dataLancamento             DateTime @map("data_lancamento")
+  dataMovimento              DateTime @map("data_movimento")
+  numeroLote                 Int?
+  numeroDocumento            BigInt
+  codigoHistorico            Int?
+  descricaoHistorico         String   @map("descricao")
+  valorLancamento            Decimal  @db.Decimal(12, 2)
+  indicadorSinalLancamento   String   @map("sinal")
+  infoComplementar           String?
+  cpfCnpjContrapartida       String?
+  tipoPessoaContrapartida    String?
+  codigoBancoContrapartida   Int?
+  codigoAgenciaContrapartida Int?
+  numeroContaContrapartida   String?
+  dvContaContrapartida       String?
+  tipoLancamento             String?
+  dataCriacao                DateTime @default(now())
+  user                       user     @relation(fields: [userid], references: [userid])
 }
 
 model criar_evento {
   eventoid     Int              @id
   titulo       String           @db.Char(255)
-  image        String?
   descriçao   String           @db.Char(255)
-  criar_evento DateTime         @default(now())
+  DataCriacao  DateTime         @default(now())
   data_termino DateTime         @db.Date()
   ultima_mod   DateTime         @updatedAt
   criadorid    Int
@@ -64,7 +76,7 @@ model registo_evento {
   sobrenome         String       @unique
   responsavel       String       @unique
   idade             Int          @unique
-  idade_responsavel DateTime     @db.Date
+  idade_responsavel Int          @unique
   created_registro  DateTime     @default(now())
   endereçoid       String
   endereço         endereço    @relation(fields: [endereçoid], references: [endereçoid])

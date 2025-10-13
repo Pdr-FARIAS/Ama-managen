@@ -1,54 +1,56 @@
-import { list as _list, create as _create, update as _update, remove as _remove } from '../service/RegistroService.js';
+import RegisterService from "../service/RegisterService";
 
-const list = async (req, res) => {
-    try {
-        const registros = await _list();
-        res.json(registros);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+
+class RegisterController {
+    async registerEvento(req, res, next) {
+        try {
+            const register = await RegisterService.registerEvento(req.userid, req.body);
+            res.status(201).json(register)
+        } catch (error) {
+            next(error);
+        }
     }
-};
+    async updadeRegister(req, res, next) {
+        try {
+            const registerid = parseInt(req.params.id);
+            const register = await RegisterService.updadeRegister(registerid, req.Body);
+            res.status(200).json(register)
+        } catch (error) {
 
-const get = async (req, res) => {
-    try {
-        const id = parseInt(req.params.id, 10);
-        const registro = await _get(id);
-        if (!registro) return res.status(404).json({ error: 'Registro not found' });
-        res.json(registro);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+            next(error)
+        }
     }
-};
-
-const create = async (req, res) => {
-    try {
-        const payload = req.body;
-        const created = await _create(payload);
-        res.status(201).json(created);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
+    async deleteRegister(req, res, next) {
+        try {
+            const registerid = parseInt(req.params.id);
+            await RegisterService.deleteRegister(req.userid, registerid)
+            res.status(204).json({ message: `Evento:${registerid},deletado com sucesso !` });
+        } catch (error) {
+            next(error);
+        }
     }
-};
 
-const update = async (req, res) => {
-    try {
-        const id = parseInt(req.params.id, 10);
-        const payload = req.body;
-        const updated = await _update(id, payload);
-        res.json(updated);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
+    async searchRegistername(req, res, next) {
+        try {
+            const search = req.query.q;
+            const register = await RegisterService.searchRegistername(req.userid, search)
+            res.status(200).json(register);
+        } catch (error) {
+            next(error);
+        }
     }
-};
-
-const remove = async (req, res) => {
-    try {
-        const id = parseInt(req.params.id, 10);
-        await _remove(id);
-        res.status(204).send();
-    } catch (err) {
-        res.status(400).json({ error: err.message });
+    async findRegisterid(req, res, next) {
+        try {
+            const registerid = parseInt(req.params.id);
+            const register = await RegisterService.findRegisterid(registerid,);
+            res.status(200).json(register);
+        } catch (error) {
+            next(error);
+        }
     }
-};
 
-export default { list, get, create, update, remove };
+
+}
+
+
+export default new RegisterController();

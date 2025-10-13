@@ -1,54 +1,69 @@
-import { list as _list, create as _create, update as _update, remove as _remove } from '../service/ExtratoService.js';
+import Extratoservice from "../service/ExtratoService";
+import UserService from "../service/UserService";
 
-const list = async (req, res) => {
-    try {
-        const extratos = await _list();
-        res.json(extratos);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+class ExtratoControler {
+
+    async buscarExtarto(req, res, next) {
+        try {
+            const userid = req.userid;
+            const token = await UserService.SolicitarToken();
+            const { agencia, conta } = await UserService.getContaInfo(userid);
+            const extrato = await Extratoservice.buscaextratoconta({
+                token,
+                agencia,
+                conta,
+                gwDevAppKey: process.env.GW_DEV_APP_KEY,
+                dataInicio,
+                dataFim,
+
+            });
+            await Extratoservice.salvarExtrato(userid, extrato);
+            return res.status(200).json({
+                mensagem: "Extrato consultado e salvo", extrato
+            })
+        } catch (error) {
+            console.error("Erro ao buscar e salvar extrato:", error);
+            return res.status(500).json({ erro: "Erro ao buscar extrato" });
+        }
     }
-};
 
-const get = async (req, res) => {
-    try {
-        const id = req.params.id;
-        const extrato = await _get(id);
-        if (!extrato) return res.status(404).json({ error: 'Extrato not found' });
-        res.json(extrato);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+
+
+    async ReceberExtrato(token) {
+        try {
+            const dados = await Extratoservice.buscarExtarto(token);
+            const extrato = await Extratoservice.salvarExtrato(dados);
+            return { mensagem: 'Extrato processado e salvo com sucesso', extrato }
+        } catch (error) {
+            next(error)
+
+        }
     }
-};
-
-const create = async (req, res) => {
-    try {
-        const payload = req.body;
-        const created = await _create(payload);
-        res.status(201).json(created);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
+    async salvarExtrato(dadosExtrato) {
+        try {
+            const extratoSalvo = await Extratoservice.salvarExtrato(dadosExtrato);
+            return extratoSalvo;
+        } catch (error) {
+            console.error("Erro ao salvar extrato:", error.message);
+            throw error;
+        }
     }
-};
+    async buscarExtratoUsuario(req, res, next) {
+        try {
+            const userId = req.userId;
+            const user = await UserService.findById(userId);
 
-const update = async (req, res) => {
-    try {
-        const id = req.params.id;
-        const payload = req.body;
-        const updated = await _update(id, payload);
-        res.json(updated);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
+
+            const token = await UserService.SolicitarToken();
+            const extratoData = await Extratoservice.buscarExtratoBB(token, user.agencia_conta, user.numero_conta);
+
+            await Extratoservice.salvarExtrato(userId, extratoData.listaLancamento);
+
+            res.json({ mensagem: "Extrato salvo com sucesso" });
+        } catch (err) {
+            next(err);
+        }
     }
-};
+}
 
-const remove = async (req, res) => {
-    try {
-        const id = req.params.id;
-        await _remove(id);
-        res.status(204).send();
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
-};
-
-export default { list, get, create, update, remove };
+export default new ExtratoControler();
