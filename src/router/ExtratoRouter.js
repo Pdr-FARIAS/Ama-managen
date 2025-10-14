@@ -1,11 +1,13 @@
-import { Router } from 'express';
-import ExtratoController from '../controller/ExtratoController.js';
-const router = Router();
+// src/routes/extratoRoutes.js
+import express from "express";
+import ExtratoController from "../controller/ExtratoController.js";
+import { authentication } from "../middlewares/AuthMiddleware.js";
+import validate from "../middlewares/ReqTypeValidation.js";
+import { extratoGraficoSchema } from "../utils/ExtratoSchema.js";
 
-router.get('/', ExtratoController.list);
-router.get('/:id', ExtratoController.get);
-router.post('/', ExtratoController.create);
-router.put('/:id', ExtratoController.update);
-router.delete('/:id', ExtratoController.remove);;
+const router = express.Router();
+router.get("/extrato/buscar", authentication, ExtratoController.buscarExtrato);
+router.get("/extrato", authentication, ExtratoController.listarExtratos);
+router.get("/extrato/grafico", authentication, validate(extratoGraficoSchema), ExtratoController.buscarValoresParaGrafico);
 
 export default router;

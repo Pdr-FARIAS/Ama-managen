@@ -33,6 +33,16 @@ class EnderecoController {
             next(error);
         }
     }
-}
+    async findEnderecoById(req, res, next) {
+        try {
+            const { id } = req.params;
+            const endereco = await EndereoService.findEnderecoid(id);
 
+            return res.status(200).json(endereco);
+        } catch (error) {
+            next(error);
+        }
+
+    }
+}
 export default new EnderecoController();

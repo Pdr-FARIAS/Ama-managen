@@ -1,12 +1,14 @@
-// src/router/EventoRouter.js
-import { Router } from 'express';
-import { create, list, update, remove } from '../controller/EventoControler.js';
+import express from "express";
+import EventoController from "../controller/EventoControler.js";
+import { authentication } from "../middlewares/AuthMiddleware.js";
+import validate from "../middlewares/ReqTypeValidation.js";
+import { createEvento, updateEvento } from "../utils/EventoShema.js";
 
-const router = Router();
+const router = express.Router();
 
-router.post('/', create);
-router.get('/', list);
-router.put('/:id', update);
-router.delete('/:id', remove);
+router.post("/evento", authentication, validate(createEvento), EventoController.registerEvento);
+router.get("/evento/:id", authentication, EventoController.findEventoid);
+router.put("/evento/:id", authentication, validate(updateEvento), EventoController.updadeEvento);
+router.delete("/evento/:id", authentication, EventoController.deleteEvento);
 
 export default router;

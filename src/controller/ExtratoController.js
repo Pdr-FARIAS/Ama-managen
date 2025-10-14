@@ -3,9 +3,10 @@ import UserService from "../service/UserService";
 
 class ExtratoControler {
 
-    async buscarExtarto(req, res, next) {
+    async buscarExtrato(req, res, next) {
         try {
             const userid = req.userid;
+            const { dataInicio, dataFim } = req.query;
             const token = await UserService.SolicitarToken();
             const { agencia, conta } = await UserService.getContaInfo(userid);
             const extrato = await Extratoservice.buscaextratoconta({
@@ -28,42 +29,31 @@ class ExtratoControler {
     }
 
 
-
-    async ReceberExtrato(token) {
-        try {
-            const dados = await Extratoservice.buscarExtarto(token);
-            const extrato = await Extratoservice.salvarExtrato(dados);
-            return { mensagem: 'Extrato processado e salvo com sucesso', extrato }
-        } catch (error) {
-            next(error)
-
-        }
-    }
-    async salvarExtrato(dadosExtrato) {
-        try {
-            const extratoSalvo = await Extratoservice.salvarExtrato(dadosExtrato);
-            return extratoSalvo;
-        } catch (error) {
-            console.error("Erro ao salvar extrato:", error.message);
-            throw error;
-        }
-    }
-    async buscarExtratoUsuario(req, res, next) {
+    async listarExtratos(req, res, next) {
         try {
             const userId = req.userId;
-            const user = await UserService.findById(userId);
-
-
-            const token = await UserService.SolicitarToken();
-            const extratoData = await Extratoservice.buscarExtratoBB(token, user.agencia_conta, user.numero_conta);
-
-            await Extratoservice.salvarExtrato(userId, extratoData.listaLancamento);
-
-            res.json({ mensagem: "Extrato salvo com sucesso" });
-        } catch (err) {
-            next(err);
+            const extratos = await Extratoservice.listarExtratosUsuario(userId);
+            return res.status(200).json({ extratos });
+        } catch (error) {
+            console.error("Erro ao listar extratos:", error);
+            return res.status(500).json({ erro: "Erro ao listar extratos" });
         }
     }
+
+    async buscarValoresParaGrafico(req, res, next) {
+        try {
+            const userId = req.userId;
+            const { dataInicio, dataFim } = req.query;
+
+            const dados = await Extratoservice.listarLancamentosParaGrafico(userId, dataInicio, dataFim);
+
+            return res.status(200).json(dados);
+        } catch (err) {
+            console.error("Erro ao buscar dados para gráfico:", err.message);
+            return res.status(500).json({ error: "Erro interno ao buscar dados do gráfico." });
+        }
+    }
+
 }
 
 export default new ExtratoControler();

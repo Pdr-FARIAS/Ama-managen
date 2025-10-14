@@ -1,7 +1,7 @@
 // src/service/UserService.js
 import prisma from '../config/prismaClient.js';
 import axios from 'axios'
-import { UserError } from "../error/UserError.js"
+import { UserError } from "../error/Error.js"
 import validation from "../utils/Validation.js"
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
@@ -11,7 +11,7 @@ import bcrypt from "bcrypt";
 class UserService {
 
     async RegistrarUser(body) {
-        validation.vadatePasswordandEmail(body.email, body.password);
+        validation.validatePasswordAndEmail(body.email, body.password);
         validation.isValidadeAgenciaConta(body.numero_conta, body.agencia_conta);
         await this.verifyUserAlreadyExist(body.email, null);
         const encryptPass = await bcrypt.hash(body.password, 10);
@@ -30,7 +30,7 @@ class UserService {
 
     async updateUser(id, name, email, password) {
         await this.findById(id)
-        validation.vadatePasswordandEmail(email, password);
+        validation.validatePasswordAndEmail(email, password);
         await this.verifyUserAlreadyExist(email, id);
 
         if (!password) {

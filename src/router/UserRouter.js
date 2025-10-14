@@ -1,15 +1,17 @@
-import { Router } from 'express';
-import { list, get, create, update, remove } from '../controller/UserController.js';
+import express from "express";
+import UserController from "../controller/UserController.js";
+import { authentication } from "../middlewares/AuthMiddleware.js";
+import { verifyUserPermission } from "../middlewares/PermissionMiddleware.js";
+import validate from "../middlewares/ReqTypeValidation.js";
+import { updateUser, createUser, login } from "../utils/userShema.js";
+import { verifyUserAlreadyExist } from "../utils/Validation.js";
 
-const router = Router();
+const router = express.Router();
 
-router.get('/', list);
-router.get('/:id', get);
-router.post('/', create);
-router.put('/:id', update);
-router.delete('/:id', remove);
-
-
-
+router.post("/login", validate(login), UserController.login);
+router.post("/register", validate(createUser), verifyUserAlreadyExist, UserController.registerUser);
+router.get("/user", authentication, UserController.getUser);
+router.put("/user/:id", authentication, validate(updateUser), verifyUserPermission, UserController.updateUser);
+router.delete("/user/:id", authentication, verifyUserPermission, UserController.deleteUser);
 
 export default router;

@@ -19,10 +19,10 @@ class Eventocontoller {
             next(error);
         }
     }
-    async updadeEvente(req, res, next) {
+    async updadeEvento(req, res, next) {
         try {
             const eventoid = parseInt(req.params.id);
-            const evento = await EventoService.updadeEvente(eventoid, req.userid, req.Body);
+            const evento = await EventoService.updadeEvento(eventoid, req.userid, req.Body);
             res.status(200).json(evento)
         } catch (error) {
 

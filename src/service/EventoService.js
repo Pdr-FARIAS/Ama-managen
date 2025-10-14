@@ -52,9 +52,9 @@ class EventoService {
     }
 
 
-    async verifyEventoalreadyExist(id, name) {
+    async verifyEventoalreadyExist(id, titulo) {
         const evento = await prisma.criar_evento.findFirst({
-            where: { eventoid: id, name: name }
+            where: { eventoid: id, titulo: titulo }
         });
         if (evento) {
             throw new EventoError("Evento ja criado ", 400);

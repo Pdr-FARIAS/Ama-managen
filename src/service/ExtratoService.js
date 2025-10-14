@@ -1,6 +1,6 @@
 import axios from 'axios';
 import prisma from '../config/prismaClient.js';
-import { UserError } from "../error/UserError.js";
+
 
 class ExtratoService {
 
@@ -27,7 +27,7 @@ class ExtratoService {
         const lancamentos = Array.isArray(listaLancamentos) ? listaLancamentos : [listaLancamentos];
 
         for (const lanc of lancamentos) {
-            await prisma.lancamentoExtrato.create({
+            await prisma.extrato_Movimentaçao.create({
                 data: {
                     userId,
                     indicadorTipoLancamento: lanc.indicadorTipoLancamento,
@@ -51,6 +51,69 @@ class ExtratoService {
             });
         }
     }
+    async buscarExtratoUsuario(user, token) {
+        try {
+            const extrato = await this.buscaextratoconta({
+                token,
+                agencia: user.agencia_conta,
+                conta: user.numero_conta,
+                gwDevAppKey: process.env.GW_DEV_APP_KEY,
+                dataInicio: user.dataInicio,
+                dataFim: user.dataFim,
+            });
+
+            await this.salvarExtrato(user.id, extrato.listaLancamento);
+            return extrato;
+        } catch (err) {
+            console.error("Erro ao buscar extrato do usuário:", err.message);
+            throw new ExtratoError("Falha ao buscar e salvar extrato do usuário.", 500);
+        }
+    }
+
+
+    async listarExtratosUsuario(userId) {
+        if (!userId) throw new ExtratoError("ID de usuário inválido", 400);
+
+        return await prisma.extrato_Movimentaçao.findMany({
+            where: { userId },
+            orderBy: { dataMovimento: "desc" },
+        });
+    }
 }
+ async listarLancamentosParaGrafico(userId, dataInicio, dataFim) {
+    if (!userId) throw new ExtratoError("ID de usuário inválido", 400);
+
+    const filtros = {
+        userId,
+    };
+
+    if (dataInicio && dataFim) {
+        filtros.dataMovimento = {
+            gte: new Date(dataInicio),
+            lte: new Date(dataFim)
+        };
+    }
+
+    const resultados = await prisma.extrato_Movimentaçao.findMany({
+        where: filtros,
+        select: {
+            dataMovimento: true,
+            valorLancamento: true,
+            indicadorSinalLancamento: true
+        },
+        orderBy: {
+            dataMovimento: 'asc'
+        }
+    });
+
+    // Normalizando os valores: crédito positivo, débito negativo
+    return resultados.map(item => ({
+        data: item.dataMovimento,
+        valor: item.indicadorSinalLancamento === 'D' ? -item.valorLancamento : item.valorLancamento
+    }));
+}
+}
+
+
 
 export default new ExtratoService();

@@ -7,7 +7,7 @@ import EnderecoService from "../service/EnderecoService.js";
 
 class RegisterService {
     async registerEvento(id, body) {
-        await this.verifyRegisterExist(id, body.name)
+        await this.verifyRgisterAlreadyExist(id, body.name)
         try {
             const newRegisterEvento = await prisma.$transaction(async (tx) => {
                 if (!enderecoId) {
