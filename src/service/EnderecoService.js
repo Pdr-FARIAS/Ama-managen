@@ -1,80 +1,95 @@
-// src/service/EnderecoService.js
 import prisma from '../config/prismaClient.js';
-
-export class EnderecoService {
-
-    async registerEndereco(body, tx) {
+import { EnderecoError } from '../error/Error.js';
+class EnderecoService {
+    async registerEndereco(endereco, tx = prisma) {
         try {
-            const newEndreco = await prisma.$transaction(async (tx) => {
-                const RegisterEndereco = await tx.endereço.create({
-                    data: {
-                        lote: body.lote,
-                        numero: body.numero,
-                        quadra: body.quadra,
-                        bairro: body.bairro,
-                        referencia: body.referencia,
-                    },
-                });
 
-                return RegisterEndereco;
+            if (!endereco || !endereco.lote) {
+                throw new EnderecoError("Os dados de endereço são inválidos ou incompletos.", 400);
+            }
+
+            const novoEndereco = await tx.endereço.create({
+                data: {
+                    lote: endereco.lote,
+                    numero: endereco.numero,
+                    quadra: endereco.quadra || null,
+                    bairro: endereco.bairro || null,
+                    referencia: endereco.referencia || null,
+                },
             });
-            return newEndreco;
 
+            return novoEndereco;
         } catch (error) {
-            console.error("---- ERRO OCORREU UM ERRO INESPERADO----");
-            console.error("mensagem do erro original :", error.menssage);
-            throw new RegisterError(`Falha ao salvar endereço`, 400);
+            console.error("Erro ao registrar endereço:", error.message);
+            throw new EnderecoError("Falha ao salvar endereço", 400);
         }
+    }
 
-    };
-    async updateEndereco(id, body) {
-        const endeco = await this.findEnderecoid(id);
+    async updateEndereco(filtros, userId, body) {
+        const resultado = await this.searchEndereco(filtros);
+        const endereco = resultado[0];
+
         try {
-            return prisma.$transaction(async (tx) => {
-                const updateEndereco = await tx.endereço.update({
-                    where: { endereçoid: endeco },
-                    data: {
-                        lote: body.lote,
-                        numero: body.numero,
-                        quadra: body.quadra,
-                        bairro: body.bairro,
-                        referencia: body.referencia,
+            const updatedEndereco = await prisma.endereço.update({
+                where: { endereçoid: endereco.endereçoid },
+                data: {
+                    lote: body.lote,
+                    numero: body.numero,
+                    quadra: body.quadra,
+                    bairro: body.bairro,
+                    referencia: body.referencia,
+                },
+            });
 
-                    },
-
-                });
-                return updateEndereco;
-            })
+            return updatedEndereco;
         } catch (error) {
-            console.error("---- ERRO OCORREU UM ERRO INESPERADO----");
-            console.error("mensagem do erro original :", error.menssage);
-            throw new RegisterError(`Falha ao alterar endereço`, 400);
-
+            console.error("Erro ao atualizar endereço:", error.message);
+            throw new Error("Falha ao alterar endereço");
         }
     }
 
     async deleteEndereco(id) {
-        const endeco = await this.findEnderecoid(id);
-        return prisma.$transaction(async (tx) => {
-            await prisma.endereço.delete({
-                where: { endereçoid: endeco },
-
+        try {
+            const endereco = await prisma.endereço.findUnique({
+                where: { endereçoid: id },
             });
-
-        })
-
-    }
-
-    async findEnderecoid(id) {
-        const endereco = await prisma.endereço.findFirst({
-            where: { endereçoid: id }
-        });
-        if (!endereco) {
-            throw new EnderecoError("Endereço não encontrado ou não possui permissão para acessá-lo.", 404);
+            if (!endereco) {
+                throw new Error("Endereço não encontrado para exclusão.");
+            }
+            await prisma.endereço.delete({
+                where: { endereçoid: id },
+            });
+            console.log(`Endereço ${id} deletado com sucesso.`);
+            return { message: `Endereço ${id} deletado com sucesso.` };
+        } catch (error) {
+            console.error("Erro ao deletar endereço:", error.message);
+            throw new Error("Falha ao deletar endereço");
         }
     }
 
 
+    async searchEndereco(filtros) {
+        const { lote, quadra, bairro } = filtros;
 
+        if (!lote && !quadra && !bairro) {
+            throw new EnderecoError("Informe pelo menos um campo para pesquisar o endereço.", 400);
+        }
+
+        const resultados = await prisma.endereço.findMany({
+            where: {
+                AND: [
+                    lote ? { lote: { contains: lote } } : {},
+                    quadra ? { quadra: { contains: quadra } } : {},
+                    bairro ? { bairro: { contains: bairro } } : {},
+                ],
+            },
+        });
+
+        if (!resultados.length) {
+            throw new EnderecoError("Nenhum endereço encontrado com os critérios informados.", 404);
+        }
+
+        return resultados;
+    }
 }
 export default new EnderecoService();

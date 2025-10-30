@@ -10,7 +10,9 @@ const router = express.Router();
 
 router.post("/login", validate(login), UserController.login);
 router.post("/register", validate(createUser), verifyUserAlreadyExist, UserController.registerUser);
-router.get("/user", authentication, UserController.getUser);
+router.get("/:id", authentication, verifyUserPermission, UserController.getUser);
+router.get("/", authentication, UserController.getAllUsers)
+router.get("/email/:email", authentication, UserController.getUserByEmail);
 router.put("/user/:id", authentication, validate(updateUser), verifyUserPermission, UserController.updateUser);
 router.delete("/user/:id", authentication, verifyUserPermission, UserController.deleteUser);
 

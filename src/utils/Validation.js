@@ -1,14 +1,10 @@
-import { UserError, EventoError, EnderecoError, RegistroError } from "../error/Error.js";
+import { UserError, EventoError, EnderecoError, RegisterError } from "../error/Error.js";
 import prisma from "../config/prismaClient.js";
 
-/**
- * Classe de validações gerais e regras de negócio.
- * Deve ser chamada antes dos schemas Zod (ex: no middleware de validação).
- */
 class Validation {
-    // 🔹 Verifica formato de e-mail e força de senha
+    // 🔹 Valida formato de e-mail e senha forte
     validatePasswordAndEmail(email, password) {
-        const emailPattern = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
+        const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
         if (!emailPattern.test(email)) {
             throw new UserError("O email é inválido!", 400);
@@ -20,25 +16,59 @@ class Validation {
 
             if (!passwordPattern.test(password)) {
                 throw new UserError(
-                    "A senha deve ter no mínimo 8 caracteres sendo ao menos uma letra maiúscula, uma minúscula, um número e um caracter especial!",
+                    "A senha deve ter no mínimo 8 caracteres, incluindo ao menos uma letra maiúscula, uma minúscula, um número e um caracter especial!",
                     400
                 );
             }
         }
     }
 
-    // 🔹 Verifica se usuário já existe
-    async verifyUserAlreadyExist(email) {
-        if (!email) {
-            throw new UserError("O email é obrigatório para esta verificação.", 400);
+    // 🔹 Valida se a agência e conta são coerentes
+    async isValidadeAgenciaConta(agencia, conta) {
+        const agenciaLimpa = String(agencia).replace(/\D/g, '');
+        const contaLimpa = String(conta).replace(/\D/g, '');
+
+        if (!agenciaLimpa || !contaLimpa) {
+            throw new UserError('Agência e conta são obrigatórias.', 400);
         }
 
-        const existingUser = await prisma.user.findUnique({
-            where: { email },
-        });
+        if (agenciaLimpa.length !== 4) {
+            throw new UserError('A agência deve ter 4 dígitos.', 400);
+        }
 
-        if (existingUser) {
-            throw new UserError("Usuário já cadastrado com este email.", 409);
+        if (contaLimpa.length < 5 || contaLimpa.length > 10) {
+            throw new UserError('A conta deve ter entre 5 e 10 dígitos.', 400);
+        }
+
+        if (isNaN(agenciaLimpa) || isNaN(contaLimpa)) {
+            throw new UserError('Agência e conta devem conter apenas números.', 400);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        return true;
+    }
+
+    // 🔹 Verifica se já existe usuário com mesmo email ou conta bancária
+    async verifyUserAlreadyExist(email, numero_conta = null, agencia_conta = null, id = null) {
+        // Verifica duplicidade de email
+        if (email) {
+            const existingEmail = await prisma.user.findUnique({
+                where: { email },
+            });
+            if (existingEmail && (id === null || existingEmail.userid !== id)) {
+                throw new UserError("Usuário já cadastrado com este email.", 409);
+            }
+        }
+
+        // Verifica duplicidade de conta bancária
+        if (numero_conta && agencia_conta) {
+            const existingConta = await prisma.user.findFirst({
+                where: { numero_conta, agencia_conta },
+            });
+            if (existingConta && (id === null || existingConta.userid !== id)) {
+                throw new UserError("Esta conta bancária já está associada a outro usuário.", 409);
+            }
         }
     }
 
@@ -47,7 +77,6 @@ class Validation {
         const evento = await prisma.criar_evento.findFirst({
             where: { titulo, criadorid },
         });
-
         if (evento) {
             throw new EventoError("Já existe um evento com este título para este criador.", 409);
         }
@@ -58,9 +87,8 @@ class Validation {
         const registro = await prisma.registo_evento.findFirst({
             where: { name, register_id: userId },
         });
-
         if (registro) {
-            throw new RegistroError("Registro já existente com este nome!", 409);
+            throw new RegisterError("Registro já existente com este nome!", 409);
         }
     }
 
@@ -102,8 +130,8 @@ class Validation {
  */
 export const verifyUserAlreadyExist = async (req, res, next) => {
     try {
-        const { email } = req.body;
-        await new Validation().verifyUserAlreadyExist(email);
+        const { email, numero_conta, agencia_conta } = req.body;
+        await new Validation().verifyUserAlreadyExist(email, numero_conta, agencia_conta);
         next();
     } catch (err) {
         console.error("Erro ao verificar usuário existente:", err);
@@ -113,8 +141,6 @@ export const verifyUserAlreadyExist = async (req, res, next) => {
 
 export function parseDateInt(dateStr) {
     if (!dateStr) return null;
-
-    // Exemplo: "20250130" -> 2025-01-30
     const year = dateStr.substring(0, 4);
     const month = dateStr.substring(4, 6);
     const day = dateStr.substring(6, 8);

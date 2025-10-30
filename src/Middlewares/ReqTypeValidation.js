@@ -1,18 +1,19 @@
-export default function vaidate(schema) {
+// src/middlewares/ReqTypeValidation.js
+export default function validate(schema, source = "body") {
     return async function (req, res, next) {
         try {
-            const validatedData = await schema.parseAsync({
-                body: req.body,
-                file: req.file,
-            });
 
-            req.validatedBody = validatedData.body;
-            req.validatedFile = validatedData.file;
+            const data = req[source] || {};
 
-            return next();
+            const validatedData = await schema.parseAsync(data);
+
+
+            req.validated = validatedData;
+
+            next();
         } catch (error) {
-            console.log(error);
-            return res.status(400).json(error);
+            console.error("Erro de validação Zod:", error.errors || error);
+            return res.status(400).json({ error: error.errors || error });
         }
     };
 }

@@ -12,8 +12,9 @@ export async function authentication(req, res, next) {
 
         const [, token] = authorization.split(" ");
 
-        const data = jwt.decode(token, process.env.JWT_SECRET);
+        const data = jwt.verify(token, process.env.JWT_SECRET);
 
+        // Aqui: use userId com “I” maiúsculo
         if (!data || !data.userId) {
             throw new UserError("token inválido ou expirado.", 401);
         }
@@ -33,3 +34,26 @@ export async function authentication(req, res, next) {
         }
     }
 }
+export const authorizeRole = (requiredRole) => {
+    return (req, res, next) => {
+        try {
+            const authHeader = req.headers.authorization;
+            if (!authHeader) {
+                throw new UserError("Token de autenticação não fornecido.", 401);
+            }
+
+            const token = authHeader.split(" ")[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+            if (decoded.role !== requiredRole) {
+                throw new UserError("Acesso negado: Permissão insuficiente.", 403);
+            }
+
+            req.user = decoded;
+            next();
+        } catch (error) {
+            next(error);
+        }
+    };
+};
+

@@ -5,10 +5,10 @@ import validate from "../middlewares/ReqTypeValidation.js";
 import { createEvento, updateEvento } from "../utils/EventoShema.js";
 
 const router = express.Router();
-
-router.post("/evento", authentication, validate(createEvento), EventoController.registerEvento);
-router.get("/evento/:id", authentication, EventoController.findEventoid);
-router.put("/evento/:id", authentication, validate(updateEvento), EventoController.updadeEvento);
-router.delete("/evento/:id", authentication, EventoController.deleteEvento);
-
+router.post("/", authentication, validate(createEvento), EventoController.registerEvento);
+router.get("/", EventoController.getAllEventos);
+router.get("/:id", EventoController.findEventoid);
+router.put("/:id", authentication, validate(updateEvento), EventoController.updadeEvento);
+router.delete("/:id", authentication, EventoController.deleteEvento);
+router.get("/search/titulo", EventoController.searchEvento);
 export default router;
