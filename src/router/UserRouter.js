@@ -13,7 +13,7 @@ router.post("/register", validate(createUser), verifyUserAlreadyExist, UserContr
 router.get("/:id", authentication, verifyUserPermission, UserController.getUser);
 router.get("/", authentication, UserController.getAllUsers)
 router.get("/email/:email", authentication, UserController.getUserByEmail);
-router.put("/user/:id", authentication, validate(updateUser), verifyUserPermission, UserController.updateUser);
+router.put("/", authentication, validate(updateUser), UserController.updateUser);
 router.delete("/user/:id", authentication, verifyUserPermission, UserController.deleteUser);
 
 export default router;

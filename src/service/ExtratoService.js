@@ -114,8 +114,8 @@ class ExtratoService {
                         userid: userId, // ✅ nome correto
                         tipoLancamento: lanc.indicadorTipoLancamento || null, // ✅ corresponde a "tipoLancamento"
                         data_lancamento: lanc.dataLancamento ? new Date(lanc.dataLancamento) : new Date(),
-                        data_movimento: lanc.data_movimento ? new Date(lanc.data_movimento) : new Date(),
-                        codigoAgenciaOrigem: lanc.codigoAgenciaOrigem || 0, // precisa ser Int, não null
+                        data_movimento: lanc.dataMovimento ? new Date(lanc.dataMovimento) : new Date(),
+                        codigoAgenciaOrigem: lanc.codigoAgenciaOrigem || null, // precisa ser Int, não null
                         numeroLote: lanc.numeroLote || null,
                         numeroDocumento: String(lanc.numeroDocumento || "0"),
                         codigoHistorico: lanc.codigoHistorico || null,
@@ -201,7 +201,41 @@ class ExtratoService {
             valor: item.sinal === 'D' ? -item.valorLancamento : item.valorLancamento
         }));
     }
+
+    async deletarExtratoPorId(extratoId, userId) {
+        if (!extratoId || !userId) throw new Error("Dados inválidos para exclusão.");
+
+        // Verifica se o lançamento pertence ao usuário
+        const extrato = await prisma.extrato.findUnique({
+            where: { id: Number(extratoId) },
+        });
+
+        if (!extrato) throw new Error("Extrato não encontrado.");
+        if (extrato.userid !== userId) throw new Error("Você não tem permissão para excluir este extrato.");
+
+        // Exclui
+        await prisma.extrato.delete({
+            where: { id: Number(extratoId) },
+        });
+
+        return { message: "Lançamento excluído com sucesso!" };
+    }
+
+    // Excluir todos os lançamentos de um usuário
+    async deletarTodosExtratos(userId) {
+        if (!userId) throw new Error("Usuário inválido.");
+
+        const result = await prisma.extrato.deleteMany({
+            where: { userid: userId },
+        });
+
+        return { message: `Foram excluídos ${result.count} lançamentos.` };
+    }
 }
+
+
+
+
 
 
 

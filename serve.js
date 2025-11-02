@@ -8,7 +8,7 @@ import EventoRouter from './src/router/EventoRouter.js';
 import EnderecoRouter from './src/router/EnderecoRouter.js';
 import ExtratoRouter from './src/router/ExtratoRouter.js';
 import RegistroRouter from './src/router/RegistroRouter.js';
-import { Socket } from 'dgram';
+
 
 dotenv.config();
 const app = express();
@@ -27,7 +27,12 @@ export { Io, app };
 
 
 const PORT = process.env.PORT || 3000;
-app.use(cors());
+app.use(cors({
+    origin: "*", // teste inicial - libera tudo
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 app.use(express.json());
 
 

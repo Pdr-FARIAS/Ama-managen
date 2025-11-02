@@ -72,7 +72,7 @@ model extrato {
   extratoid                  String   @id @default(uuid())
   userid                     Int
   user                       user     @relation(fields: [userid], references: [userid])
-  codigoAgenciaOrigem        Int
+  codigoAgenciaOrigem        Int?
   data_lancamento            DateTime
   data_movimento             DateTime
   numeroLote                 Int?

@@ -35,32 +35,63 @@ class UserService {
         });
     }
 
-    async updateUser(userid, name, email, password, numero_conta, agencia_conta) {
-        await this.findById(userid);
-        validation.validatePasswordAndEmail(email, password);
-        await validation.verifyUserAlreadyExist(
-            email,
-            numero_conta,
-            agencia_conta,
-            userid
-        );
+    async updateUser(userId, payload) {
+        const dataToUpdate = {};
 
-        const dataToUpdate = {
-            user: name,
-            email,
-            numero_conta,
-            agencia_conta,
-        };
-
-        if (password) {
-            dataToUpdate.password = await bcrypt.hash(password, 10);
+        // ✅ Aceita 'user' OU 'name'
+        if (payload.user || payload.name) {
+            dataToUpdate.user = payload.user || payload.name;
         }
 
-        return await prisma.user.update({
-            where: { userid },
+        if (payload.email) {
+            dataToUpdate.email = payload.email;
+        }
+
+        if (payload.password) {
+            dataToUpdate.password = await bcrypt.hash(payload.password, 10);
+        }
+
+        if (payload.agencia_conta) {
+            dataToUpdate.agencia_conta = payload.agencia_conta;
+        }
+
+        if (payload.numero_conta) {
+            dataToUpdate.numero_conta = payload.numero_conta;
+        }
+
+        if (Object.keys(dataToUpdate).length === 0) {
+            throw new UserError("Nenhum campo válido fornecido para atualização.", 400);
+        }
+
+        console.log("[PRISMA UPDATE] User ID:", userId);
+        console.log("   Payload de Atualização (data):", dataToUpdate);
+
+        const updatedResult = await prisma.user.update({
+            where: { userid: Number(userId) },
             data: dataToUpdate,
+            select: {
+                userid: true,
+                user: true,
+                email: true,
+                agencia_conta: true,
+                numero_conta: true,
+                role: true
+            }
         });
+
+        return {
+            id: updatedResult.userid,
+            name: updatedResult.user,
+            email: updatedResult.email,
+            agencia_conta: updatedResult.agencia_conta,
+            numero_conta: updatedResult.numero_conta,
+            role: updatedResult.role
+        };
     }
+
+
+
+
     async deleteUser(userid) {
         const user = await this.findById(userid);
         if (!user) throw new UserError("Usuário não encontrado!", 404);
@@ -78,8 +109,8 @@ class UserService {
             throw new UserError("A senha está incorreta!", 400);
         }
 
-        // gera o token com userid e email
-        return jwt.sign(
+
+        const token = jwt.sign(
             {
                 userId: user.userid,
                 email: user.email,
@@ -88,6 +119,17 @@ class UserService {
             process.env.JWT_SECRET,
             { expiresIn: "2h" }
         );
+        return {
+            token,
+            user: {
+                userId: user.userid, // 👈 renomeia pra ser igual ao JWT
+                name: user.user,
+                email: user.email,
+                role: user.role,
+                agencia_conta: user.agencia_conta,
+                numero_conta: user.numero_conta
+            }
+        };
     }
 
     // 🔹 Buscar usuário por email
@@ -102,13 +144,19 @@ class UserService {
     }
 
     // 🔹 Buscar usuário por ID
-    async findById(userid) {
+    async findById(userId) {
         const user = await prisma.user.findUnique({
-            where: { userid },
+            where: { userid: Number(userId) }, // 👈 usa 'userid', não 'id'
+            select: {
+                userid: true,
+                user: true,
+                email: true,
+                agencia_conta: true,
+                numero_conta: true,
+                role: true
+            }
         });
-        if (!user) {
-            throw new UserError("Usuário não encontrado!", 404);
-        }
+
         return user;
     }
 

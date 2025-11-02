@@ -5,34 +5,35 @@ class ExtratoControler {
 
     async buscarExtrato(req, res, next) {
         try {
-            const userid = req.userid;
+            const userId = req.userId; // ✅ vem do middleware Auth
             const { dataInicio, dataFim } = req.query;
 
+            if (!userId) throw new Error("Usuário não autenticado.");
+
             Io.emit("extrato_status", {
-                userid,
-                etapa: "Iniciando busca de extrato...",
+                userId,
+                etapa: "🔍 Iniciando busca de extrato...",
                 status: "processando"
             });
 
-
+            // 1️⃣ Solicita token do BB
             const token = await UserService.SolicitarToken();
-
             Io.emit("extrato_status", {
-                userid,
-                etapa: "Token do Banco do Brasil obtido com sucesso.",
+                userId,
+                etapa: "✅ Token do Banco do Brasil obtido com sucesso.",
                 status: "ok"
             });
 
-            const { agencia, conta } = await UserService.getContaInfo(userid);
-
+            // 2️⃣ Obtém dados da conta do usuário
+            const { agencia, conta } = await UserService.getContaInfo(userId);
             Io.emit("extrato_status", {
-                userid,
-                etapa: `Consultando API do Banco do Brasil (agência ${agencia}, conta ${conta})...`,
+                userId,
+                etapa: `🏦 Consultando API BB (agência ${agencia}, conta ${conta})...`,
                 status: "processando"
             });
 
-
-            const extrato = await Extratoservice.buscaextratoconta({
+            // 3️⃣ Busca extrato na API do BB
+            const extrato = await ExtratoService.buscaextratoconta({
                 token,
                 agencia,
                 conta,
@@ -41,40 +42,50 @@ class ExtratoControler {
                 dataFim,
             });
 
+            // 4️⃣ Verifica se veio algo
+            if (!extrato?.listaLancamento?.length) {
+                Io.emit("extrato_status", {
+                    userId,
+                    etapa: "⚠️ Nenhum lançamento encontrado.",
+                    status: "vazio"
+                });
+                return res.status(200).json({ message: "Nenhum lançamento encontrado." });
+            }
+
+            // 5️⃣ Salva tudo no banco local
+            await ExtratoService.salvarExtrato(userId, extrato.listaLancamento);
             Io.emit("extrato_status", {
-                userid,
-                etapa: "Extrato recebido da API. Salvando no banco de dados...",
-                status: "processando"
+                userId,
+                etapa: "💾 Lançamentos salvos com sucesso no banco.",
+                status: "ok"
             });
 
-            await Extratoservice.salvarExtrato(userid, extrato);
-
-
-            Io.emit("extrato_atualizado", {
-                userid,
-                periodo: { dataInicio, dataFim },
-                quantidadeLancamentos: Array.isArray(extrato) ? extrato.length : 1,
-                status: "concluido"
+            // 6️⃣ Retorna sucesso final
+            Io.emit("extrato_status", {
+                userId,
+                etapa: "✅ Processo de busca e salvamento concluído!",
+                status: "finalizado"
             });
-
 
             return res.status(200).json({
-                mensagem: "Extrato consultado e salvo com sucesso.",
-                extrato
+                message: "Extrato obtido e salvo com sucesso.",
+                total: extrato.listaLancamento.length,
             });
 
         } catch (error) {
-            console.error("Erro ao buscar e salvar extrato:", error);
-
-            Io.emit("extrato_erro", {
-                userid: req.userid,
-                mensagem: error.message || "Erro desconhecido ao buscar extrato.",
-                status: "erro"
+            console.error("Erro ao buscar extrato:", error);
+            Io.emit("extrato_status", {
+                etapa: "❌ Erro ao buscar extrato.",
+                status: "erro",
+                erro: error.message,
             });
-
-            return res.status(500).json({ erro: "Erro ao buscar extrato" });
+            res.status(500).json({
+                error: "Falha ao buscar e salvar extrato.",
+                message: error.message,
+            });
         }
     }
+
 
 
     async criarExtratoManual(req, res, next) {
@@ -103,6 +114,35 @@ class ExtratoControler {
             console.error("Erro ao listar extratos:", error);
             return res.status(500).json({ erro: "Erro ao listar extratos" });
         }
+
+    } async listarEntradas(req, res, next) {
+        try {
+            const userId = req.userId; // Pega do middleware de autenticação
+            const { dataInicio, dataFim } = req.query; // Pega dos query params
+
+            const entradas = await Extratoservice.listarEntradas(userId, dataInicio, dataFim);
+
+            return res.status(200).json(entradas);
+
+        } catch (error) {
+            console.error("Erro ao listar entradas:", error.message);
+            next(error); // Passa o erro para seu error handler
+        }
+    }
+
+    async listarSaidas(req, res, next) {
+        try {
+            const userId = req.userId;
+            const { dataInicio, dataFim } = req.query;
+
+            const saidas = await Extratoservice.listarSaidas(userId, dataInicio, dataFim);
+
+            return res.status(200).json(saidas);
+
+        } catch (error) {
+            console.error("Erro ao listar saidas:", error.message);
+            next(error);
+        }
     }
 
     async buscarValoresParaGrafico(req, res, next) {
@@ -120,6 +160,29 @@ class ExtratoControler {
         } catch (err) {
             console.error("Erro ao buscar dados para gráfico:", err.message);
             return res.status(500).json({ error: "Erro interno ao buscar dados do gráfico." });
+        }
+    }
+
+    async deletarExtrato(req, res, next) {
+        try {
+            const userId = req.userId; // vem do AuthMiddleware
+            const { id } = req.params;
+
+            const result = await Extratoservice.deletarExtratoPorId(id, userId);
+            res.status(200).json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    // Excluir todos os extratos do usuário
+    async deletarTodos(req, res, next) {
+        try {
+            const userId = req.userId; // vem do token JWT
+            const result = await Extratoservice.deletarTodosExtratos(userId);
+            res.status(200).json(result);
+        } catch (error) {
+            next(error);
         }
     }
 

@@ -12,5 +12,8 @@ router.get("/buscar", authentication, ExtratoController.buscarExtrato);
 router.get("/extrato", authentication, ExtratoController.listarExtratos);
 router.get("/grafico", authentication, validate(extratoGraficoSchema), ExtratoController.buscarValoresParaGrafico);
 router.post("/manual", authentication, validate(createExtratoManualSchema), ExtratoController.criarExtratoManual);
-
+router.get("/entradas", authentication, ExtratoController.listarEntradas);
+router.get("/saidas", authentication, ExtratoController.listarSaidas);
+router.delete("/:id", authentication, ExtratoController.deletarExtrato);
+router.delete("/", authentication, ExtratoController.deletarTodos);
 export default router;
