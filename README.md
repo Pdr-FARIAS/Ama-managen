@@ -1,151 +1,179 @@
-# 🏦 AMA Manager — Backend (API Node.js + Prisma + Banco do Brasil)
+# 💼 AMA Finanças — Backend (Node.js + Prisma + Express)
 
-> API RESTful desenvolvida em **Node.js** com **Express**, **Prisma ORM**, **JWT** e integração com a **API do Banco do Brasil (Open Finance)**.  
-> Este back-end gerencia autenticação, eventos, endereços, registros e extratos financeiros em tempo real via **Socket.IO**.
+API desenvolvida para gerenciamento financeiro e controle de extratos bancários com integração ao **Banco do Brasil Open Finance**, além de módulos de usuários, eventos e registros.
 
 ---
 
 ## 🚀 Tecnologias Utilizadas
 
-| Categoria | Tecnologias |
-|------------|--------------|
-| **Linguagem** | Node.js (ES Modules) |
-| **Framework** | Express.js |
-| **Banco de Dados** | PostgreSQL (via Prisma ORM) |
-| **Autenticação** | JWT (Json Web Token) + Bcrypt |
-| **Tempo Real** | Socket.IO |
-| **Integração Externa** | API Banco do Brasil (Open Finance / Sandbox) |
-| **Validação** | Zod + Middlewares personalizados |
-| **Ambiente** | dotenv + nodemon para desenvolvimento |
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+![Socket.IO](https://img.shields.io/badge/Socket.IO-010101?style=for-the-badge&logo=socket.io&logoColor=white)
+![Axios](https://img.shields.io/badge/Axios-671ddf?style=for-the-badge&logo=axios&logoColor=white)
+![Zod](https://img.shields.io/badge/Zod-1B1F24?style=for-the-badge&logo=zod&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 
 ---
 
-## 📁 Estrutura de Pastas
+## 📂 Estrutura de Pastas
 
 ```
-📦 backend/
+├── prisma/                  # Schema do banco de dados (Prisma ORM)
 ├── src/
-│   ├── controller/
-│   ├── middlewares/
-│   ├── service/
-│   ├── utils/
-│   ├── router/
-│   ├── config/
-│   └── error/
-├── .env
+│   ├── controller/          # Controladores (lógica das rotas)
+│   ├── service/             # Regras de negócio e integração externa
+│   ├── middlewares/         # Autenticação, permissões, validações
+│   ├── router/              # Definições de rotas Express
+│   ├── utils/               # Schemas Zod e funções auxiliares
+│   └── error/               # Classes de erro personalizadas
+├── .env                     # Variáveis de ambiente
 ├── package.json
-├── prisma/
-│   └── schema.prisma
-└── server.js
+├── serve.js                 # Inicialização do servidor Express
+└── README.md
 ```
 
 ---
 
-## 🔑 Principais Funcionalidades
+## ⚙️ Configuração e Execução
 
-### 🧍‍♂️ Usuários
-- Registro (`POST /user/register`)
-- Login (`POST /user/login`)
-- Atualização de dados (`PUT /user`)
-- Exclusão (`DELETE /user/:id`)
-- Autenticação JWT via middleware (`Bearer Token`)
+### 🔧 Pré-requisitos
+- Node.js (v18+)
+- PostgreSQL
+- Conta Sandbox do **Banco do Brasil Open Finance** (para testes)
 
-### 🧾 Extrato Bancário
-- Integração com API Banco do Brasil (Sandbox)
-- Sincronização de lançamentos (`GET /extrato/sincronizar`)
-- Inserção manual (`POST /extrato/manual`)
-- Filtros por período (`GET /extrato?dataInicio=&dataFim=`)
-- Cálculo automático de entradas, saídas e saldo
-- Exclusão de extrato específico ou total
+### 🧩 Instalação
 
-### 📊 Gráficos Financeiros
-- Endpoint: `GET /extrato/grafico`
-- Retorna valores somados por data, com débitos negativos e créditos positivos.
-
-### 🗓️ Eventos, Endereços e Registros
-- CRUD completo (Create, Read, Update, Delete)
-- Relações configuradas no Prisma (`evento` ↔ `endereco` ↔ `registro`)
-- Atualizações em tempo real com `Socket.IO`
-
----
-
-## ⚙️ Configuração do Ambiente
-
-### 1️⃣ Instalar dependências:
 ```bash
+# Clone o repositório
+git clone https://github.com/Pdr-FARIAS/Ama-managen.git
+
+# Acesse o diretório
+cd Ama-managen
+
+# Instale as dependências
 npm install
 ```
 
-### 2️⃣ Criar o arquivo `.env`:
+### ⚙️ Configuração do Ambiente
+
+Crie um arquivo `.env` na raiz com as variáveis:
+
 ```env
-DATABASE_URL="postgresql://usuario:senha@localhost:5432/ama_manager"
-JWT_SECRET="sua_chave_super_secreta"
+DATABASE_URL="postgresql://usuario:senha@localhost:5432/ama_financeiro"
 PORT=3000
-
-# Banco do Brasil Sandbox
-GW_DEV_APP_KEY="sua_chave_do_bb"
-BB_CLIENT_ID="seu_client_id"
-BB_CLIENT_SECRET="seu_client_secret"
+JWT_SECRET="seu_token_jwt_super_seguro"
+GW_DEV_APP_KEY="sua_chave_api_bb"
 ```
 
-### 3️⃣ Executar o Prisma:
+### 🚀 Executando o Servidor
+
 ```bash
+# Rodar migrações do Prisma
 npx prisma migrate dev
+
+# Iniciar servidor
+npm start
 ```
 
-### 4️⃣ Rodar o servidor:
-```bash
-npm run dev
+A API será executada em:
 ```
-A API será iniciada em: **http://localhost:3000**
+http://localhost:3000
+```
 
 ---
 
-## 🧠 Fluxo de Autenticação
+## 🔐 Autenticação e Autorização
 
-1. O usuário faz login (`/user/login`);
-2. A API gera um **JWT** válido por 2 horas;
-3. O token é enviado no **header Authorization**:
-   ```
-   Authorization: Bearer seu_token_aqui
-   ```
-4. O middleware `authentication` valida o token e injeta `req.userId`.
-
----
-
-## 🧰 Scripts Úteis
-
-| Comando | Descrição |
-|----------|------------|
-| `npm run dev` | Executa o servidor em modo desenvolvimento |
-| `npm run build` | Transpila o código para produção |
-| `npx prisma studio` | Abre o painel visual do banco |
-| `npx prisma migrate dev` | Executa migrações do banco |
-| `npm test` | Executa testes (Jest) |
+- A autenticação é baseada em **JWT (JSON Web Token)**.
+- Ao fazer login (`POST /user/login`), o servidor retorna um token que deve ser enviado no header:
+  ```
+  Authorization: Bearer {token}
+  ```
+- Middleware `authentication` garante que apenas usuários autenticados acessem rotas protegidas.
+- O middleware `authorizeRole("ADMIN")` restringe o acesso a administradores.
 
 ---
 
-## 🔒 Segurança
-- Tokens expiram em 2h (JWT).
-- Hash de senha com **bcrypt (10 rounds)**.
-- Middleware de autenticação para rotas protegidas.
-- Middleware de permissão (ADMIN / USER).
+## 📡 Principais Rotas
+
+### 👤 Usuários
+| Método | Rota | Descrição |
+|:-------|:------|:-----------|
+| `POST` | `/user/register` | Cadastra novo usuário |
+| `POST` | `/user/login` | Realiza login e gera JWT |
+| `GET` | `/user/:id` | Retorna informações do usuário |
+| `PUT` | `/user/user` | Atualiza nome, e-mail, senha, agência ou conta |
+| `DELETE` | `/user/user/:id` | Remove o usuário |
 
 ---
 
-## 🧩 To-Do / Melhorias Futuras
-
-- [ ] Emitir eventos `extrato_atualizado` via Socket.IO.
-- [ ] Adicionar testes unitários (Jest).
-- [ ] Criar logs de erro (Winston/Pino).
-- [ ] Adicionar Swagger para documentação automática.
-- [ ] Implementar cache (Redis).
+### 💳 Extratos
+| Método | Rota | Descrição |
+|:-------|:------|:-----------|
+| `POST` | `/extrato/manual` | Cria lançamento manual |
+| `GET` | `/extrato` | Lista todos os lançamentos |
+| `GET` | `/extrato/grafico` | Retorna dados formatados para gráfico |
+| `DELETE` | `/extrato/:id` | Exclui lançamento específico |
+| `DELETE` | `/extrato` | Exclui todos os lançamentos do usuário |
 
 ---
 
-## 🧑‍💻 Autor
+### 📊 Gráficos e Entradas/Saídas
+- `GET /extrato/grafico`: retorna movimentações financeiras formatadas (`{ data, valor }`)
+- As saídas vêm com valores negativos para cálculo automático de saldo
+- Integração com **Recharts** ou **Chart.js** no front-end
+
+---
+
+### 🎉 Eventos
+| Método | Rota | Descrição |
+|:-------|:------|:-----------|
+| `GET` | `/evento` | Lista todos os eventos |
+| `POST` | `/evento` | Cria um novo evento |
+| `PUT` | `/evento/:id` | Atualiza um evento existente |
+| `DELETE` | `/evento/:id` | Exclui um evento |
+
+---
+
+### 🏠 Endereços
+| Método | Rota | Descrição |
+|:-------|:------|:-----------|
+| `GET` | `/endereco` | Lista todos os endereços |
+| `GET` | `/endereco/search` | Busca endereços pelo nome |
+| `POST` | `/endereco` | Cadastra novo endereço |
+| `PUT` | `/endereco/:id` | Atualiza endereço existente |
+| `DELETE` | `/endereco/:id` | Exclui endereço |
+
+---
+
+### 🧾 Registros
+| Método | Rota | Descrição |
+|:-------|:------|:-----------|
+| `GET` | `/registro` | Lista todos os registros |
+| `POST` | `/registro` | Cria novo registro vinculado a evento e endereço |
+| `PUT` | `/registro/:id` | Atualiza um registro |
+| `DELETE` | `/registro/:id` | Exclui um registro |
+
+---
+
+## 🔌 Integração com o Front-end
+
+O projeto front consome as rotas REST da API via **Axios**, e autentica o usuário via token armazenado em **Cookies** ou **localStorage**.  
+Além disso, o **Socket.IO** é usado para:
+- Notificar o status de importação de extratos
+- Atualizar o dashboard em tempo real
+- Emitir alertas de eventos e registros
+
+---
+
+## 👨‍💻 Autor
 
 **Pedro Gabriel Farias**  
-💼 Projeto TCC — Sistema de Gestão AMA Manager  
-📅 2025  
-🔗 Desenvolvido com Node.js + Prisma + React + Banco do Brasil API
+💼 Desenvolvedor Full Stack | 📧 [pedrogabrielgam13@gmail.com](mailto:pedrogabrielgam13@gmail.com)  
+🌐 [github.com/Pdr-FARIAS](https://github.com/Pdr-FARIAS)
+
+---
+
+✨ *“Transformando dados financeiros em controle e autonomia.”*
