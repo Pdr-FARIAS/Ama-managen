@@ -2,7 +2,7 @@ import { UserError, EventoError, EnderecoError, RegisterError } from "../error/E
 import prisma from "../config/prismaClient.js";
 
 class Validation {
-    // 🔹 Valida formato de e-mail e senha forte
+
     validatePasswordAndEmail(email, password) {
         const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
@@ -23,7 +23,6 @@ class Validation {
         }
     }
 
-    // 🔹 Valida se a agência e conta são coerentes
     async isValidadeAgenciaConta(agencia, conta) {
         const agenciaLimpa = String(agencia).replace(/\D/g, '');
         const contaLimpa = String(conta).replace(/\D/g, '');
@@ -49,9 +48,9 @@ class Validation {
         return true;
     }
 
-    // 🔹 Verifica se já existe usuário com mesmo email ou conta bancária
+
     async verifyUserAlreadyExist(email, numero_conta = null, agencia_conta = null, id = null) {
-        // Verifica duplicidade de email
+
         if (email) {
             const existingEmail = await prisma.user.findUnique({
                 where: { email },
@@ -61,7 +60,7 @@ class Validation {
             }
         }
 
-        // Verifica duplicidade de conta bancária
+
         if (numero_conta && agencia_conta) {
             const existingConta = await prisma.user.findFirst({
                 where: { numero_conta, agencia_conta },
@@ -72,7 +71,7 @@ class Validation {
         }
     }
 
-    // 🔹 Verifica duplicidade de evento
+
     async verifyEventoAlreadyExist(titulo, criadorid) {
         const evento = await prisma.criar_evento.findFirst({
             where: { titulo, criadorid },
@@ -82,7 +81,6 @@ class Validation {
         }
     }
 
-    // 🔹 Verifica duplicidade de registro
     async verifyRegistroAlreadyExist(name, userId) {
         const registro = await prisma.registo_evento.findFirst({
             where: { name, register_id: userId },
@@ -92,7 +90,7 @@ class Validation {
         }
     }
 
-    // 🔹 Verifica duplicidade de endereço
+
     async verifyEnderecoAlreadyExist(body) {
         const endereco = await prisma.endereço.findFirst({
             where: {
@@ -108,7 +106,6 @@ class Validation {
         }
     }
 
-    // 🔹 Valida formato e coerência de datas
     validateDateRange(dataInicio, dataFim) {
         const regex = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -125,9 +122,6 @@ class Validation {
     }
 }
 
-/**
- * Middleware para uso direto nas rotas.
- */
 export const verifyUserAlreadyExist = async (req, res, next) => {
     try {
         const { email, numero_conta, agencia_conta } = req.body;

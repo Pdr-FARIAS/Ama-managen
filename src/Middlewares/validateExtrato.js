@@ -1,4 +1,4 @@
-// src/middlewares/validateExtrato.js
+
 import { ExtratoError } from "../error/Error.js";
 
 export function validateDatas(req, res, next) {

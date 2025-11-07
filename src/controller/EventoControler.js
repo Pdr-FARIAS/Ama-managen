@@ -5,6 +5,7 @@ import { Io } from "../../serve.js";
 class EventoController {
     async registerEvento(req, res, next) {
         try {
+            console.log(req);
             const evento = await EventoService.registerEvento(req.userId, req.body);
             Io.emit("novo_evento", evento);
             res.status(201).json(evento);
@@ -64,6 +65,16 @@ class EventoController {
             next(error);
         }
     }
+    async getRegistrosPorEvento(req, res, next) {
+        try {
+            const eventoid = parseInt(req.params.id);
+            const registros = await EventoService.findRegistrosPorEventoId(eventoid);
+            res.status(200).json(registros);
+        } catch (error) {
+            next(error);
+        }
+    }
+
 
 }
 

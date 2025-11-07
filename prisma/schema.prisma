@@ -9,7 +9,7 @@ datasource db {
 
 model user {
   userid        Int    @id @default(autoincrement())
-  user          String @unique @db.Char(20)
+  user          String @unique @db.Char(50)
   email         String @unique
   password      String
   numero_conta  String @unique @db.Char(9)
@@ -22,47 +22,47 @@ model user {
 
 model criar_evento {
   eventoid     Int      @id @default(autoincrement())
-  titulo       String   @db.Char(255)
-  descriçao   String   @db.Char(255)
+  titulo       String   @db.VarChar(255)
+  descriçao   String   @db.VarChar(255)
   DataCriacao  DateTime @default(now())
   data_termino DateTime @db.Date
   ultima_mod   DateTime @updatedAt
-  criadorid    Int
+  image        String?  @db.LongText
 
-  // Relação com o criador (usuário)
-  criador user @relation(fields: [criadorid], references: [userid])
+  criadorid Int
+  criador   user @relation(fields: [criadorid], references: [userid], onDelete: Cascade)
 
-  // Relação com registros de evento
   registros registo_evento[]
 
   @@index([criadorid], map: "criar_evento_criadorid_fkey")
 }
 
 model endereço {
-  endereçoid String @id @default(uuid())
-  lote        String @db.Char(30)
+  endereçoid String  @id @default(uuid())
+  lote        String  @db.VarChar(30)
   numero      String
-  quadra      String @db.Char(20)
-  bairro      String @db.Char(15)
-  referencia  String @db.Char(50)
+  quadra      String  @db.VarChar(20)
+  bairro      String  @db.VarChar(30)
+  referencia  String? @db.VarChar(100)
 
   registros registo_evento[]
 }
 
 model registo_evento {
-  registro_id       Int       @id @default(autoincrement())
-  nome              String    @unique
-  sobrenome         String    @unique
-  responsavel       String    @unique
-  idade             Int       @unique
-  idade_responsavel Int       @unique
-  created_registro  DateTime  @default(now())
-  image             String?   @db.LongText
-  endereçoid       String
-  endereço         endereço @relation(fields: [endereçoid], references: [endereçoid], onDelete: Cascade)
+  registro_id       Int      @id @default(autoincrement())
+  nome              String
+  sobrenome         String
+  responsavel       String
+  idade             Int
+  idade_responsavel Int
+  created_registro  DateTime @default(now())
+  image             String?  @db.LongText
+
+  endereçoid String
+  endereço   endereço @relation(fields: [endereçoid], references: [endereçoid], onDelete: Cascade)
 
   eventoid Int
-  evento   criar_evento @relation(fields: [eventoid], references: [eventoid])
+  evento   criar_evento @relation(fields: [eventoid], references: [eventoid], onDelete: Cascade)
 
   @@index([endereçoid], map: "registo_evento_endereçoid_fkey")
   @@index([eventoid], map: "registo_evento_eventoid_fkey")
@@ -71,12 +71,12 @@ model registo_evento {
 model extrato {
   extratoid                  String   @id @default(uuid())
   userid                     Int
-  user                       user     @relation(fields: [userid], references: [userid])
+  user                       user     @relation(fields: [userid], references: [userid], onDelete: Cascade)
   codigoAgenciaOrigem        Int?
   data_lancamento            DateTime
   data_movimento             DateTime
   numeroLote                 Int?
-  numeroDocumento            String   @db.Char(20)
+  numeroDocumento            String   @db.VarChar(20)
   codigoHistorico            Int?
   descricao                  String
   valorLancamento            Decimal  @db.Decimal(12, 2)

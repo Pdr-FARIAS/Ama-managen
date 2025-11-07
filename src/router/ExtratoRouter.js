@@ -16,4 +16,6 @@ router.get("/entradas", authentication, ExtratoController.listarEntradas);
 router.get("/saidas", authentication, ExtratoController.listarSaidas);
 router.delete("/:id", authentication, ExtratoController.deletarExtrato);
 router.delete("/", authentication, ExtratoController.deletarTodos);
+router.get("/sincronizar", authMiddleware, ExtratoController.sincronizar);
+
 export default router;

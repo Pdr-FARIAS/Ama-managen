@@ -11,7 +11,7 @@ class EnderecoService {
             const novoEndereco = await tx.endereço.create({
                 data: {
                     lote: endereco.lote,
-                    numero: endereco.numero,
+                    numero: String(endereco.numero,),
                     quadra: endereco.quadra || null,
                     bairro: endereco.bairro || null,
                     referencia: endereco.referencia || null,

@@ -58,8 +58,37 @@ class RegisterController {
             next(error);
         }
     }
+    async getRegistrosPorEvento(req, res, next) {
+        try {
+            const eventoid = parseInt(req.params.eventoid);
 
+            if (isNaN(eventoid)) {
+                return res.status(400).json({ message: "ID do evento inválido" });
+            }
 
+            const registros = await RegisterService.getRegistrosPorEvento(eventoid);
+
+            return res.status(200).json(registros);
+        } catch (error) {
+            next(error);
+        }
+    }
+    async deleteByEvent(req, res) {
+        try {
+            const { eventoid } = req.params;
+
+            await RegisterService.deleteByEvent(eventoid);
+
+            return res.status(200).json({
+                message: "Registros deste evento foram apagados com sucesso!"
+            });
+        } catch (error) {
+            console.error("Erro ao deletar registros:", error);
+            return res.status(500).json({
+                error: "Falha ao deletar registros do evento"
+            });
+        }
+    }
 }
 
 

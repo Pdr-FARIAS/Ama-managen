@@ -38,20 +38,16 @@ class UserController {
 
     async updateUser(req, res, next) {
         try {
-            const userId = req.userId; // ID do Token
+            const userId = req.userId;
 
-            // req.validatedBody contém { user: novo_nome, email: novo_email, ... }
+
             const updates = req.validatedBody || req.body;
-
-            // CORREÇÃO: O service precisa retornar o objeto User COMPLETO (e não apenas o resultado do update do Prisma)
-            // O service só retorna o resultado do update, mas o Prisma precisa de um select para retornar tudo.
-            // Vamos confiar que o service retorna o objeto atualizado.
             console.log("📥 Payload recebido no controller:", req.body);
             const updatedUser = await UserService.updateUser(userId, updates);
 
             res.status(200).json({
                 message: "Usuário atualizado com sucesso!",
-                // Certifique-se de que 'updatedUser' inclui o ID, o nome, a agência, etc.
+
                 user: updatedUser,
             });
         } catch (error) {
@@ -100,7 +96,6 @@ class UserController {
 
         }
     }
-    // Buscar usuário pelo e-mail
     async getUserByEmail(req, res, next) {
         try {
             const { email } = req.params;

@@ -7,9 +7,12 @@ const router = express.Router();
 
 
 router.post("/registro", validate(createRegister), RegistroController.registerEvento);
-router.get("/registro/:id", RegistroController.findRegisterid);
+router.get("/:id", RegistroController.findRegisterid);
 router.get("/registros", RegistroController.searchRegistername);
-router.put("/registro/:id", validate(updateRegister), RegistroController.updadeRegister);
-router.delete("/registro/:id", RegistroController.deleteRegister);
+router.put("/:id", validate(updateRegister), RegistroController.updadeRegister);
+router.delete("/:id", RegistroController.deleteRegister);
+router.delete("/:eventoid/registros", RegistroController.deleteByEvent);
+router.get("/evento/:eventoid", RegistroController.getRegistrosPorEvento);
+
 
 export default router;

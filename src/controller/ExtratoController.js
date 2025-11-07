@@ -2,10 +2,14 @@ import Extratoservice from "../service/ExtratoService.js";
 import UserService from "../service/UserService.js";
 import { Io } from "../../serve.js";
 class ExtratoControler {
+    async sincronizar(req, res, next) {
+
+        return this.buscarExtrato(req, res, next);
+    }
 
     async buscarExtrato(req, res, next) {
         try {
-            const userId = req.userId; // ✅ vem do middleware Auth
+            const userId = req.userId;
             const { dataInicio, dataFim } = req.query;
 
             if (!userId) throw new Error("Usuário não autenticado.");
@@ -16,73 +20,60 @@ class ExtratoControler {
                 status: "processando"
             });
 
-            // 1️⃣ Solicita token do BB
-            const token = await UserService.SolicitarToken();
-            Io.emit("extrato_status", {
-                userId,
-                etapa: "✅ Token do Banco do Brasil obtido com sucesso.",
-                status: "ok"
-            });
 
-            // 2️⃣ Obtém dados da conta do usuário
+            const token = await UserService.SolicitarToken();
+
+
             const { agencia, conta } = await UserService.getContaInfo(userId);
+
             Io.emit("extrato_status", {
                 userId,
-                etapa: `🏦 Consultando API BB (agência ${agencia}, conta ${conta})...`,
+                etapa: `🏦 Consultando BB (Ag ${agencia} Conta ${conta})`,
                 status: "processando"
             });
-
-            // 3️⃣ Busca extrato na API do BB
             const extrato = await ExtratoService.buscaextratoconta({
                 token,
                 agencia,
                 conta,
                 gwDevAppKey: process.env.GW_DEV_APP_KEY,
                 dataInicio,
-                dataFim,
+                dataFim
             });
 
-            // 4️⃣ Verifica se veio algo
             if (!extrato?.listaLancamento?.length) {
                 Io.emit("extrato_status", {
                     userId,
-                    etapa: "⚠️ Nenhum lançamento encontrado.",
+                    etapa: "⚠ Nenhum lançamento encontrado.",
                     status: "vazio"
                 });
                 return res.status(200).json({ message: "Nenhum lançamento encontrado." });
             }
-
-            // 5️⃣ Salva tudo no banco local
             await ExtratoService.salvarExtrato(userId, extrato.listaLancamento);
+
             Io.emit("extrato_status", {
                 userId,
-                etapa: "💾 Lançamentos salvos com sucesso no banco.",
+                etapa: "💾 Dados salvos com sucesso",
                 status: "ok"
             });
 
-            // 6️⃣ Retorna sucesso final
+
             Io.emit("extrato_status", {
                 userId,
-                etapa: "✅ Processo de busca e salvamento concluído!",
+                etapa: "✅ Extrato atualizado!",
                 status: "finalizado"
             });
 
             return res.status(200).json({
-                message: "Extrato obtido e salvo com sucesso.",
-                total: extrato.listaLancamento.length,
+                message: "Extrato obtido e salvo com sucesso."
             });
 
         } catch (error) {
-            console.error("Erro ao buscar extrato:", error);
             Io.emit("extrato_status", {
-                etapa: "❌ Erro ao buscar extrato.",
                 status: "erro",
-                erro: error.message,
+                erro: error.message
             });
-            res.status(500).json({
-                error: "Falha ao buscar e salvar extrato.",
-                message: error.message,
-            });
+
+            next(error);
         }
     }
 
@@ -92,7 +83,7 @@ class ExtratoControler {
         try {
             const userId = req.userId;
             const extrato = await Extratoservice.criarExtratoManual(userId, req.body);
-            Io.emit("extrato_manual_criado", { userId, extrato });
+            Io.emit("extrato:create", extrato);
 
             res.status(201).json({
                 message: "Extrato manual criado com sucesso!",
@@ -117,8 +108,8 @@ class ExtratoControler {
 
     } async listarEntradas(req, res, next) {
         try {
-            const userId = req.userId; // Pega do middleware de autenticação
-            const { dataInicio, dataFim } = req.query; // Pega dos query params
+            const userId = req.userId;
+            const { dataInicio, dataFim } = req.query;
 
             const entradas = await Extratoservice.listarEntradas(userId, dataInicio, dataFim);
 
@@ -126,7 +117,7 @@ class ExtratoControler {
 
         } catch (error) {
             console.error("Erro ao listar entradas:", error.message);
-            next(error); // Passa o erro para seu error handler
+            next(error);
         }
     }
 
@@ -150,36 +141,67 @@ class ExtratoControler {
             const userId = req.userId;
             const { dataInicio, dataFim } = req.query;
 
-            const dados = await Extratoservice.listarLancamentosParaGrafico(userId, dataInicio, dataFim);
+            const dados = await Extratoservice.listarLancamentosParaGrafico(
+                userId,
+                dataInicio,
+                dataFim
+            );
+
+            const resumoEntradas = await Extratoservice.listarEntradas(
+                userId,
+                dataInicio,
+                dataFim
+            );
+
+
+            const resumoSaidas = await Extratoservice.listarSaidas(
+                userId,
+                dataInicio,
+                dataFim
+            );
             Io.emit("atualizar_grafico", {
                 userId,
                 periodo: { dataInicio, dataFim },
                 dados,
+                resumoEntradas,
+                resumoSaidas
             });
-            return res.status(200).json(dados);
+
+            return res.status(200).json({
+                dados,
+                resumoEntradas,
+                resumoSaidas
+            });
+
         } catch (err) {
             console.error("Erro ao buscar dados para gráfico:", err.message);
-            return res.status(500).json({ error: "Erro interno ao buscar dados do gráfico." });
+            return res.status(500).json({
+                error: "Erro interno ao buscar dados do gráfico."
+            });
         }
     }
 
+
     async deletarExtrato(req, res, next) {
         try {
-            const userId = req.userId; // vem do AuthMiddleware
+            const userId = req.userId;
             const { id } = req.params;
 
             const result = await Extratoservice.deletarExtratoPorId(id, userId);
+            Io.emit("extrato:delete", id);
+
+
             res.status(200).json(result);
         } catch (error) {
             next(error);
         }
     }
 
-    // Excluir todos os extratos do usuário
     async deletarTodos(req, res, next) {
         try {
-            const userId = req.userId; // vem do token JWT
+            const userId = req.userId;
             const result = await Extratoservice.deletarTodosExtratos(userId);
+            Io.emit("extrato:delete:all");
             res.status(200).json(result);
         } catch (error) {
             next(error);

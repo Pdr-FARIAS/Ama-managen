@@ -1,9 +1,10 @@
 // src/service/EventoService.js
 import prisma from '../config/prismaClient.js';
+import { EventoError } from "../error/Error.js";
 
 
 class EventoService {
-    // 🔹 Criar novo evento
+
     async registerEvento(userid, body) {
         await this.verifyEventoAlreadyExist(body.titulo, userid);
 
@@ -12,10 +13,12 @@ class EventoService {
                 titulo: body.titulo,
                 descriçao: body.descriçao,
                 data_termino: new Date(body.data_termino),
+                image: body.image || body.imagem || body.imageUrl || null,
                 criador: {
-                    connect: { userid }, // 🔐 Conecta ao usuário logado
+                    connect: { userid },
                 },
-                image: body.imageUrl,
+
+
             },
             include: {
                 criador: {
@@ -44,7 +47,9 @@ class EventoService {
                 descriçao: body.descriçao,
                 data_termino: body.data_termino ? new Date(body.data_termino) : undefined,
                 ultima_mod: new Date(),
-                imagem: body.imagem || undefined,
+                image: body.image || body.imagem || undefined,
+
+
             },
             include: {
                 criador: {
@@ -60,7 +65,7 @@ class EventoService {
         return eventoAtualizado;
     }
 
-    // 🔹 Deletar evento
+
     async deleteEvento(eventoid) {
         await this.findEventoid(eventoid);
 
@@ -101,6 +106,8 @@ class EventoService {
                         email: true,
                         numero_conta: true,
                         agencia_conta: true,
+
+
                     },
                 },
             },
@@ -115,6 +122,7 @@ class EventoService {
             where: {
                 titulo: {
                     contains: titulo,
+
                 },
             },
             include: {
@@ -133,6 +141,24 @@ class EventoService {
             throw new EventoError("Já existe um evento com este título para este usuário.", 400);
         }
     }
+    async findRegistrosPorEventoId(eventoid) {
+
+        const registros = await prisma.registo_evento.findMany({
+            where: { eventoid: eventoid },
+            select: {
+                registro_id: true,
+                nome: true,
+                created_registro: true
+            },
+            orderBy: { created_registro: "desc" },
+        });
+        if (!registros.length) {
+            throw new Error("Nenhum registro encontrado para este evento.");
+        }
+        return registros;
+    }
+
 }
+
 export default new EventoService();
 

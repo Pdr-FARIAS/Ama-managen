@@ -8,7 +8,7 @@ class ExtratoService {
 
         const filtros = {
             userid: userId,
-            sinal: "C", // Crédito = Entrada
+            sinal: "C",
         };
 
         if (dataInicio && dataFim) {
@@ -45,7 +45,7 @@ class ExtratoService {
 
         const filtros = {
             userid: userId,
-            sinal: "D", // Débito = Saída
+            sinal: "D",
         };
 
         if (dataInicio && dataFim) {
@@ -111,24 +111,24 @@ class ExtratoService {
             for (const lanc of lancamentos) {
                 const novoExtrato = await prisma.extrato.create({
                     data: {
-                        userid: userId, // ✅ nome correto
-                        tipoLancamento: lanc.indicadorTipoLancamento || null, // ✅ corresponde a "tipoLancamento"
+                        userid: userId,
+                        tipoLancamento: lanc.indicadorTipoLancamento || null,
                         data_lancamento: lanc.dataLancamento ? new Date(lanc.dataLancamento) : new Date(),
                         data_movimento: lanc.dataMovimento ? new Date(lanc.dataMovimento) : new Date(),
-                        codigoAgenciaOrigem: lanc.codigoAgenciaOrigem || null, // precisa ser Int, não null
+                        codigoAgenciaOrigem: lanc.codigoAgenciaOrigem || null,
                         numeroLote: lanc.numeroLote || null,
                         numeroDocumento: String(lanc.numeroDocumento || "0"),
                         codigoHistorico: lanc.codigoHistorico || null,
-                        descricao: lanc.textoDescricaoHistorico || lanc.descricao || "Sem descrição", // ✅ nome correto
+                        descricao: lanc.textoDescricaoHistorico || lanc.descricao || "Sem descrição",
                         valorLancamento: Number(lanc.valorLancamento || lanc.valor || 0),
-                        sinal: lanc.indicadorSinalLancamento || lanc.tipo || "C", // ✅ nome correto
-                        infoComplementar: lanc.textoInformacaoComplementar || null, // ✅ nome correto
+                        sinal: lanc.indicadorSinalLancamento || lanc.tipo || "C",
+                        infoComplementar: lanc.textoInformacaoComplementar || null,
                         cpfCnpjContrapartida: lanc.numeroCpfCnpjContrapartida || null,
-                        tipoPessoaContrapartida: lanc.indicadorTipoPessoaContrapartida || null, // ✅ nome correto
+                        tipoPessoaContrapartida: lanc.indicadorTipoPessoaContrapartida || null,
                         codigoBancoContrapartida: lanc.codigoBancoContrapartida || null,
                         codigoAgenciaContrapartida: lanc.codigoAgenciaContrapartida || null,
                         numeroContaContrapartida: lanc.numeroContaContrapartida || null,
-                        dvContaContrapartida: lanc.textoDvContaContrapartida || null, //
+                        dvContaContrapartida: lanc.textoDvContaContrapartida || null,
                     },
                 });
 
@@ -190,22 +190,21 @@ class ExtratoService {
                 valorLancamento: true,
                 sinal: true,
             },
-            orderBy: {
-                data_movimento: 'asc'
-            }
+            orderBy: { data_movimento: 'asc' }
         });
-
 
         return resultados.map(item => ({
             data: item.data_movimento,
-            valor: item.sinal === 'D' ? -item.valorLancamento : item.valorLancamento
+            entrada: item.sinal === 'C' ? Number(item.valorLancamento) : 0,
+            saida: item.sinal === 'D' ? Number(item.valorLancamento) : 0
         }));
     }
+
 
     async deletarExtratoPorId(extratoId, userId) {
         if (!extratoId || !userId) throw new Error("Dados inválidos para exclusão.");
 
-        // Verifica se o lançamento pertence ao usuário
+
         const extrato = await prisma.extrato.findUnique({
             where: { id: Number(extratoId) },
         });
@@ -213,7 +212,7 @@ class ExtratoService {
         if (!extrato) throw new Error("Extrato não encontrado.");
         if (extrato.userid !== userId) throw new Error("Você não tem permissão para excluir este extrato.");
 
-        // Exclui
+
         await prisma.extrato.delete({
             where: { id: Number(extratoId) },
         });
@@ -221,7 +220,7 @@ class ExtratoService {
         return { message: "Lançamento excluído com sucesso!" };
     }
 
-    // Excluir todos os lançamentos de um usuário
+
     async deletarTodosExtratos(userId) {
         if (!userId) throw new Error("Usuário inválido.");
 
@@ -232,12 +231,4 @@ class ExtratoService {
         return { message: `Foram excluídos ${result.count} lançamentos.` };
     }
 }
-
-
-
-
-
-
-
-
 export default new ExtratoService();

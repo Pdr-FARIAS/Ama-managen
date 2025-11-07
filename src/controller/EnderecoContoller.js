@@ -36,7 +36,7 @@ class EnderecoController {
     async findEnderecoById(req, res, next) {
         try {
             const { id } = req.params;
-            const endereco = await EnderecoService.findEnderecoById(id); // 
+            const endereco = await EnderecoService.findEnderecoById(id);
             res.status(200).json(endereco);
         } catch (error) {
             next(error);

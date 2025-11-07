@@ -12,23 +12,22 @@ export async function authentication(req, res, next) {
 
         const [, token] = authorization.split(" ");
 
-        // ✅ Decodifica o token com segurança
+
         const data = jwt.verify(token, process.env.JWT_SECRET);
 
-        // 🔥 Aceita tanto userId quanto id (garante compatibilidade)
+
         const userId = data.userId || data.id;
 
         if (!userId) {
             throw new UserError("Token inválido ou expirado.", 401);
         }
 
-        // ✅ Verifica se o usuário realmente existe
         const user = await UserService.findById(userId);
         if (!user) {
             throw new UserError("Usuário não encontrado.", 404);
         }
 
-        // ✅ Define no req com nome padronizado
+
         req.userId = userId;
         req.email = data.email;
         req.role = data.role;
@@ -48,7 +47,6 @@ export async function authentication(req, res, next) {
     }
 }
 
-// Middleware opcional para checar permissões
 export const authorizeRole = (requiredRole) => {
     return (req, res, next) => {
         try {

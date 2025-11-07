@@ -11,4 +11,5 @@ router.get("/:id", EventoController.findEventoid);
 router.put("/:id", authentication, validate(updateEvento), EventoController.updadeEvento);
 router.delete("/:id", authentication, EventoController.deleteEvento);
 router.get("/search/titulo", EventoController.searchEvento);
+
 export default router;

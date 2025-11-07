@@ -28,7 +28,7 @@ export { Io, app };
 
 const PORT = process.env.PORT || 3000;
 app.use(cors({
-    origin: "*", // teste inicial - libera tudo
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));

@@ -37,8 +37,6 @@ class UserService {
 
     async updateUser(userId, payload) {
         const dataToUpdate = {};
-
-        // ✅ Aceita 'user' OU 'name'
         if (payload.user || payload.name) {
             dataToUpdate.user = payload.user || payload.name;
         }
@@ -122,7 +120,7 @@ class UserService {
         return {
             token,
             user: {
-                userId: user.userid, // 👈 renomeia pra ser igual ao JWT
+                userId: user.userid,
                 name: user.user,
                 email: user.email,
                 role: user.role,
@@ -132,7 +130,6 @@ class UserService {
         };
     }
 
-    // 🔹 Buscar usuário por email
     async findByEmail(email) {
         const user = await prisma.user.findUnique({
             where: { email },
@@ -143,10 +140,10 @@ class UserService {
         return user;
     }
 
-    // 🔹 Buscar usuário por ID
+
     async findById(userId) {
         const user = await prisma.user.findUnique({
-            where: { userid: Number(userId) }, // 👈 usa 'userid', não 'id'
+            where: { userid: Number(userId) },
             select: {
                 userid: true,
                 user: true,
@@ -160,7 +157,7 @@ class UserService {
         return user;
     }
 
-    // 🔹 Solicitar token (Banco do Brasil)
+
     async SolicitarToken() {
         const url = process.env.URLBB;
         const clientId = process.env.BB_CLIENT_ID;
@@ -186,7 +183,6 @@ class UserService {
         }
     }
 
-    // 🔹 Retorna dados de conta do usuário
     async getContaInfo(userid) {
         const user = await prisma.user.findUnique({
             where: { userid },
