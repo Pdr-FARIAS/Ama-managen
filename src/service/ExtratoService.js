@@ -230,5 +230,38 @@ class ExtratoService {
 
         return { message: `Foram excluídos ${result.count} lançamentos.` };
     }
+
+    async atualizarExtrato(userId, extratoId, payload) {
+        if (!extratoId) {
+            throw new Error("extratoId é obrigatório.");
+        }
+
+        console.log("🧠 [Service] Atualizando extrato:", extratoId);
+        console.log("🧾 Dados recebidos:", payload);
+
+        const extratoExistente = await prisma.extrato.findUnique({
+            where: { extratoid: extratoId },
+        });
+
+        if (!extratoExistente) {
+            throw new Error("Extrato não encontrado.");
+        }
+
+        const extratoAtualizado = await prisma.extrato.update({
+            where: { extratoid: extratoId },
+            data: {
+                valorLancamento: payload.valorLancamento ?? extratoExistente.valorLancamento,
+                descricao: payload.descricao ?? extratoExistente.descricao,
+                sinal: payload.sinal ?? extratoExistente.sinal,
+                data_movimento: payload.data_movimento ?? extratoExistente.data_movimento,
+            },
+        });
+
+        console.log("✅ [Service] Extrato atualizado com sucesso:", extratoAtualizado);
+
+        return extratoAtualizado;
+    }
+
+
 }
 export default new ExtratoService();

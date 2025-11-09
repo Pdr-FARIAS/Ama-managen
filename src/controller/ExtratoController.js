@@ -4,7 +4,7 @@ import { Io } from "../../serve.js";
 class ExtratoControler {
     async sincronizar(req, res, next) {
 
-        return this.buscarExtrato(req, res, next);
+        return await ExtratoControler.buscarExtrato(req, res, next);
     }
 
     async buscarExtrato(req, res, next) {
@@ -207,10 +207,48 @@ class ExtratoControler {
             next(error);
         }
     }
+    async atualizarExtrato(req, res) {
+        try {
+            const userId = req.user?.userid || req.userId; // compatível com AuthMiddleware
+            const { id } = req.params; // ✅ aqui pegamos o ID da URL corretamente
+            const { valorLancamento } = req.body;
+            const { sinal } = req.body;
+            const { descricao } = req.body;
+            const { data_movimento } = req.body;
 
+            console.log("🧩 [Controller] ID recebido:", id);
+            console.log("💰 [Controller] Valor recebido:", valorLancamento);
 
+            if (!id) {
+                return res.status(400).json({ error: "ID do extrato não fornecido." });
+            }
 
+            if (!valorLancamento || isNaN(valorLancamento)) {
+                return res.status(400).json({ error: "Valor inválido." });
+            }
 
+            const extratoAtualizado = await Extratoservice.atualizarExtrato(
+                userId,
+                id,
+                valorLancamento,
+                sinal,
+                descricao,
+                data_movimento
+            );
+
+            Io.emit("extrato:update", extratoAtualizado);
+            return res.status(200).json(extratoAtualizado);
+        } catch (error) {
+            console.error("❌ Erro ao atualizar extrato:", error);
+            return res
+                .status(500)
+                .json({ error: "Erro interno ao atualizar extrato." });
+        }
+    }
 }
+
+
+
+
 
 export default new ExtratoControler();
